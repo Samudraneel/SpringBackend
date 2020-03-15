@@ -16,12 +16,21 @@ public class JukeboxService {
     @Autowired
     private SettingsDataAccessService settingsDao;
 
-    public String getJukeboxesBySettingsID(String SettingsID) {
-        // GET REQUIREMENTS BY SETTINGS ID
-//        String SettingsID = "e9869bbe-887f-4d0a-bb9d-b81eb55fbf0a";
-        JSONArray arr = settingsDao.GetRequirementsBySettingsID(SettingsID);
-        // GET ALL JUKEBOXES IF THEY HAVE THE REQUIREMENTS
+    public JSONArray getJukeboxesBySettingsID(String settingsID) {
+//        String SettingsID = "b43f247a-8478-4f24-8e28-792fcfe539f5";
+        JSONArray requirements = settingsDao.GetRequirementsBySettingsID(settingsID);
+        return jukeboxDao.GetJukesByRequirements(requirements, -1, -1);
+    }
 
-        return jukeboxDao.CallMe();
+    public JSONArray getJukeboxesBySettingsIDAndModel(String settingsID, String model) {
+        JSONArray requirements = settingsDao.GetRequirementsBySettingsID(settingsID);
+        return jukeboxDao.GetJukesByRequirementsAndModel(requirements, model);
+    }
+
+    public JSONArray getJukeboxesbySettingsIDWithOffsetAndLimit(String settingsID, int offset, int limit) {
+        JSONArray requirements = settingsDao.GetRequirementsBySettingsID(settingsID);
+        JSONArray jukes = jukeboxDao.GetJukesByRequirements(requirements, offset, limit);
+
+        return new JSONArray();
     }
 }
