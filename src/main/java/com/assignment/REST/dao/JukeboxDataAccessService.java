@@ -24,6 +24,10 @@ public class JukeboxDataAccessService {
         Parser();
     }
 
+    /**
+     *
+     * @throws ParseException, caused by json parsing.
+     */
     private void Parser() throws ParseException {
         Object parsedObject = new JSONParser().parse(this._jukebox);
         JSONArray jukeArray = (JSONArray) parsedObject;
@@ -34,7 +38,15 @@ public class JukeboxDataAccessService {
         }
     }
 
-    public JSONArray GetJukesByRequirementsAndModel(JSONArray requirements, String model) {
+    /**
+     *
+     * @param requirements, array of requirements the jukebox must satisfy.
+     * @param model, model of the jukebox requested for.
+     * @param offset, index of the first page will be starting from.
+     * @param limit, size of the page.
+     * @return: all jukeboxes which satisfy the above.
+     */
+    public JSONArray GetJukesByRequirementsAndModel(JSONArray requirements, String model, int offset, int limit) {
         Iterator it = this._jukeboxDB.entrySet().iterator();
         JSONArray arr = new JSONArray();
 
@@ -46,9 +58,20 @@ public class JukeboxDataAccessService {
             }
         }
 
+        if(offset > 0) {
+            return PaginateJukes(arr, offset, limit);
+        }
+
         return arr;
     }
 
+    /**
+     *
+     * @param keyValuePair, key value pair of the jukebox object.
+     * @param requirements, requirements the jukebox needs to satisfy.
+     * @param model, model of the jukebox requested for.
+     * @return: returns all jukeboxes that satisfy the above.
+     */
     public boolean SearchForRequirementsAndModelInComponents(Map.Entry keyValuePair, JSONArray requirements, String model) {
         JSONObject jukebox = (JSONObject) keyValuePair.getValue();
 
@@ -67,9 +90,20 @@ public class JukeboxDataAccessService {
         return true;
     }
 
+    /**
+     *
+     * @param requirements,, requirements the jukebox must satisfy.
+     * @param offset, index of the first page will be starting from.
+     * @param limit, size of the page.
+     * @return: an array of jukes that satisfy the requirements identified above.
+     */
     public JSONArray GetJukesByRequirements(JSONArray requirements, int offset, int limit) {
+        if (limit < 0) {
+            limit = 10;
+        }
         Iterator it = this._jukeboxDB.entrySet().iterator();
         JSONArray arr = new JSONArray();
+        JSONArray jukes = new JSONArray();
 
         // page is indexed from 1
         while(it.hasNext()) {
@@ -80,11 +114,61 @@ public class JukeboxDataAccessService {
             }
         }
 
-        // suppose offset = 2, limit = 2
+        if(offset > 0) {
+            return PaginateJukes(arr, offset, limit);
+        }
 
-        return arr;
+        return jukes;
     }
 
+    /**
+     *
+     * @param arr, array that will be paginated.
+     * @param offset, index of the first will be starting from.
+     * @param limit, size of the page.
+     * @return: a paginated array containing jukes.
+     */
+    private JSONArray PaginateJukes(JSONArray arr, int offset, int limit) {
+        // offset is the index at which the page starts. Thus, with an offset of 2, the 2*limit item on will be shown
+        int start = offset * limit;
+        int page = 1;
+        int counter = 0;
+        int j = 0;
+        JSONArray temparr = new JSONArray();
+        JSONObject obj = new JSONObject();
+        JSONArray jukes = new JSONArray();
+
+        while (counter < arr.size()) {
+            if (j == limit) {
+                j = 0;
+                if (start == 0) {
+                    obj.put("page" + page, temparr);
+                    jukes.add(obj);
+                } else {
+                    start -= limit;
+                    page--;
+                }
+                obj = new JSONObject();
+                temparr = new JSONArray();
+                page++;
+            }
+            temparr.add(arr.get(counter));
+            counter++;
+            j++;
+        }
+
+        if (temparr.size() > 0) {
+            obj.put("page" + page, temparr);
+            jukes.add(obj);
+        }
+        return jukes;
+    }
+
+    /**
+     *
+     * @param components: an array containing other components in key value pairs.
+     * @return: an array which returns only the values of the component array passed in.
+     */
     private HashSet<Object> GetComponentsArray(JSONArray components) {
         HashSet<Object> set = new HashSet<Object>();
 

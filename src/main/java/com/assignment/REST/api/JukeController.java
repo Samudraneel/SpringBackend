@@ -34,8 +34,8 @@ public class JukeController {
     public JSONArray findBySettingId(@PathVariable("settingsID") String settingsID,
                                      @PathVariable(value = "offset", required = false) int offset,
                                      @PathVariable(value = "limit", required = false) int limit) {
-        System.out.println(offset);
-        System.out.println(limit);
+//        System.out.println(offset);
+//        System.out.println(limit);
 
 
         return jukeboxService.getJukeboxesbySettingsIDWithOffsetAndLimit(settingsID, offset, limit);
@@ -51,6 +51,6 @@ public class JukeController {
         System.out.println(offset);
         System.out.println(limit);
 
-        return jukeboxService.getJukeboxesBySettingsID(settingsID);
+        return jukeboxService.getJukeboxesBySettingsIDModelOffsetAndLimit(settingsID, model, offset, limit);
     }
 }
