@@ -2,6 +2,7 @@ package com.assignment.REST.api;
 
 import com.assignment.REST.service.JukeboxService;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,9 +48,9 @@ public class JukeController {
                                      @PathVariable(value = "offset", required = false) int offset,
                                      @PathVariable(value = "limit", required = false) int limit) {
         // check if offset and limit are ints. if not, change them to ints. check if valid num.
-        System.out.println(model);
-        System.out.println(offset);
-        System.out.println(limit);
+//        System.out.println(model);
+//        System.out.println(offset);
+//        System.out.println(limit);
 
         return jukeboxService.getJukeboxesBySettingsIDModelOffsetAndLimit(settingsID, model, offset, limit);
     }

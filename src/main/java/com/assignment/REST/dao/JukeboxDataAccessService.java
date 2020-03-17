@@ -18,6 +18,7 @@ public class JukeboxDataAccessService {
     public static HashMap<String, JSONObject> _jukeboxDB = new HashMap<String, JSONObject>();
     private String url = "http://my-json-server.typicode.com/touchtunes/tech-assignment/jukes";
     private String _jukebox;
+    private int NOT_FOUND = 404;
 
     public JukeboxDataAccessService() throws IOException, ParseException {
         this._jukebox = new DBCall(this.url, "GET").result;
@@ -47,22 +48,31 @@ public class JukeboxDataAccessService {
      * @return: all jukeboxes which satisfy the above.
      */
     public JSONArray GetJukesByRequirementsAndModel(JSONArray requirements, String model, int offset, int limit) {
+        if (limit <= 0) {
+            limit = 10;
+        }
         Iterator it = this._jukeboxDB.entrySet().iterator();
-        JSONArray arr = new JSONArray();
+        JSONArray jukes = new JSONArray();
 
         while(it.hasNext()) {
             Map.Entry pair = (Map.Entry) it.next();
 
             if (SearchForRequirementsAndModelInComponents(pair, requirements, model)) {
-                arr.add(pair.getValue());
+                jukes.add(pair.getValue());
             }
         }
 
         if(offset > 0) {
-            return PaginateJukes(arr, offset, limit);
+            jukes = PaginateJukes(jukes, offset, limit);
         }
 
-        return arr;
+        if (jukes.isEmpty()) {
+            JSONObject obj = new JSONObject();
+            obj.put("Status: ", NOT_FOUND);
+            jukes.add(obj);
+        }
+
+        return jukes;
     }
 
     /**
@@ -98,11 +108,10 @@ public class JukeboxDataAccessService {
      * @return: an array of jukes that satisfy the requirements identified above.
      */
     public JSONArray GetJukesByRequirements(JSONArray requirements, int offset, int limit) {
-        if (limit < 0) {
+        if (limit <= 0) {
             limit = 10;
         }
         Iterator it = this._jukeboxDB.entrySet().iterator();
-        JSONArray arr = new JSONArray();
         JSONArray jukes = new JSONArray();
 
         // page is indexed from 1
@@ -110,13 +119,20 @@ public class JukeboxDataAccessService {
             Map.Entry pair = (Map.Entry) it.next();
 
             if (SearchForRequirementsAndModelInComponents(pair, requirements, null)) {
-                arr.add(pair.getValue());
+                jukes.add(pair.getValue());
             }
         }
 
-        if(offset > 0) {
-            return PaginateJukes(arr, offset, limit);
+        // offset = 0 implies that we want everything displayed and paginated.
+        if(offset >= 0) {
+            jukes = PaginateJukes(jukes, offset, limit);
         }
+
+//        if (jukes.isEmpty()) {
+//            JSONObject obj = new JSONObject();
+//            obj.put("Status: ", NOT_FOUND);
+//            jukes.add(obj);
+//        }
 
         return jukes;
     }
@@ -130,37 +146,38 @@ public class JukeboxDataAccessService {
      */
     private JSONArray PaginateJukes(JSONArray arr, int offset, int limit) {
         // offset is the index at which the page starts. Thus, with an offset of 2, the 2*limit item on will be shown
-        int start = offset * limit;
         int page = 1;
         int counter = 0;
-        int j = 0;
         JSONArray temparr = new JSONArray();
         JSONObject obj = new JSONObject();
         JSONArray jukes = new JSONArray();
 
         while (counter < arr.size()) {
-            if (j == limit) {
-                j = 0;
-                if (start == 0) {
+            if(offset == 1) {
+                if (temparr.size() < limit) {
+                    temparr.add(arr.get(counter));
+                    counter++;
+                } else if (temparr.size() == limit) {
                     obj.put("page" + page, temparr);
                     jukes.add(obj);
-                } else {
-                    start -= limit;
-                    page--;
+                    page++;
+                    obj = new JSONObject();
+                    temparr = new JSONArray();
                 }
-                obj = new JSONObject();
-                temparr = new JSONArray();
-                page++;
+            } else {
+                if ((counter + limit)%limit == 0 && counter != 0) {
+                    offset--;
+                } else {
+                    counter++;
+                }
             }
-            temparr.add(arr.get(counter));
-            counter++;
-            j++;
         }
 
         if (temparr.size() > 0) {
             obj.put("page" + page, temparr);
             jukes.add(obj);
         }
+
         return jukes;
     }
 
